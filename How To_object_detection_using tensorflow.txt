@@ -1,0 +1,121 @@
+How to Perform Object Detection with TensorFlow Lite on Raspberry Pi
+
+Enable camera interface (if you’re using the Pi camera) using
+- sudo raspi-config
+
+Reboot then update to latest packages using:
+- sudo apt update
+
+Use Python 3, set the commands python and pip to use version 3 by default.
+To do that, open a new terminal and:
+- nano .bashrc
+Then add the following to the end of the file then exit and save.
+- alias python=python3
+  alias pip=pip3
+To keep these changes use:
+- source .bashrc
+
+Create a virtual environment to keep installed libraries
+and packages separate from the main terminal environment, and then
+installing virtualenv and creating a tflite environment
+in our project directory using:
+- mkdir -p Projects/Python/tflite
+  cd Projects/Python/tflite
+  python -m pip install virtualenv
+  python -m venv tflite-env
+Each time users wish to execute a TensorFlow Lite program,
+they must first activate the tflite-env virtual environment,
+as that’s where all of the packages and libraries are stored.
+To do that, run the activate script in environment’s directory with:
+- source tflite-env/bin/activate
+
+The prompt should change to have a (tflite-env) preceding the directory listing.
+This will let users know that they are working in a virtual environment.
+
+In this new virtual environment, install the following libraries,
+which assist OpenCV in processing images/video:
+- sudo apt -y install libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev
+
+When those libraries have finished installing, use pip to install OpenCV.
+Specifically,v4.1.0.25, as that seems to work best for now:
+- python -m pip install opencv-contrib-python==4.1.0.25
+
+Then, using the following, users can figure out what type of processor they have
+and which version of Python they are using:
+- uname -m
+  python --version
+
+On a Raspberry Pi 3 or 4, users should see something telling that the CPU is an “armv7l.”
+And Python is version 3.7.
+
+
+TensorFlow Lite will work with Python versions 3.5-3.8.
+Open an Internet browser on your Pi and head to
+---((https://www.tensorflow.org/lite/guide/python))---
+Scroll down to the list of wheels (.whl) files and find the group that matches the Rasbperry Pi OS/processor,
+which should be “Linux (ARM 32).” In that group, find the link that corresponds to the version of Python. 
+Right-click and select “Copy link address.”
+---((https://github.com/google-coral/pycoral/releases/download/v1.0.1/tflite_runtime-2.5.0-cp37-cp37m-linux_armv7l.whl))---
+
+Back in the terminal, enter the following:
+- python -m pip install <paste in .whl link>
+
+Common Objects in Context (COCO) is a large collection of images
+that have been tagged and labeled by researchers at Microsoft, Facebook, and a variety of universities.
+It contains over 200,000 images with around 90 object categories.
+---((https://cocodataset.org/#home))---
+
+Object detection or object classification models can be trained on the COCO dataset
+to give us a starting point for recognizing everyday objects,
+such as people, cars, bicycles, cups, scissors, dogs, cats, and so on. 
+We will use a MobileNet V1 model that has been trained on the COCO dataset as our object detection model.
+
+On your Raspberry Pi, head to ---((https://www.tensorflow.org/lite/models/object_detection/overview))---
+and download the Starter model and labels zip file 
+(https://storage.googleapis.com/download.tensorflow.org/models/tflite/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip)
+
+In a terminal, let’s move the .zip file to a working directory for our project and unzip it:
+- mkdir -p ~/Projects/Python/tflite/object_detection/coco_ssd_mobilenet_v1
+  cd ~/Projects/Python/tflite/object_detection
+  mv ~/Downloads/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip .
+  unzip coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip -d coco_ssd_mobilenet_v1
+
+You should see two files in the coco_ssd_mobilenet_v1 directory: 
+detect.tflite and labelmap.txt. The .tflite file is our model.
+
+GitHub user EdjeElectronics (https://github.com/EdjeElectronics) has a great Python program for object detection
+that we will use as a starting point. You can view the original program here:
+https://github.com/EdjeElectronics/TensorFlow-Lite-Object-Detection-on-Android-and-Raspberry-Pi/blob/master/TFLite_detection_webcam.py
+
+The program captures a frame from the camera using OpenCV, resizes the frame to 300x300 pixels
+(note that aspect ratio is not maintained), and passes the resulting tensor to TensorFlow Lite.
+The invoke() function returns with a list of detected objects in the frame, a confidence score of each object,
+and coordinates for their bounding boxes. The program takes these coordinates and draws a green rectangle
+around the object before displaying it to the user.
+
+We are going to make a few additions. First, we will use cv2.WINDOW_NORMAL to create a window that can be resized.
+Second, we will add a section that computes the center of each object and lists detected objects to the console.
+
+In a new text editor, paste the following code, which is EdjeElectronics' original program with our additions:
+---------((((CHECK CODE FILE ATTACHED))))--------
+Save it as TFLite_detection_webcam.py in the ~/Projects/Python/tflite/object_detection folder.
+
+In a terminal window, activate the tflite-env virtual environment (if it’s not already activated) and run the program,
+setting the modeldir parameter to the location of your .tflite and labelmap files.
+
+- cd ~/Projects/Python/tflite
+  source tflite-env/bin/activate
+Then the most important code to run the whole thing:
+  ---(( cd object_detection ))---
+  ---(( python TFLite_detection_webcam.py --modeldir=coco_ssd_mobilenet_v1 ))---
+
+
+After a moment, you should see a new window pop up, giving you a feed of the Pi camera or webcam.
+If it seems a little blurry, you can use a pair of needle nose pliers to carefully rotate the lens to adjust the focus.
+
+---CONCLUSION---
+It generally works better if objects look closer to the original images used in the COCO dataset
+and under similar lighting conditions. If you are training your own model,
+you can generally control those aspects to make the model more accurate.
+
+

@@ -1,0 +1,27 @@
+Before While: loop put all this
+
+config = {
+  "apiKey": "65cb02c56234f2af7ef8e882a19117039df351f8",
+  "authDomain": "test-8d158.firebaseapp.com",
+  "databaseURL": "https://test-8d158-default-rtdb.firebaseio.com",
+  "storageBucket": "test-8d158.appspot.com"
+}
+firebase = pyrebase.initialize_app(config)
+db = firebase.database()
+
+print("Send Data to Firebase Using Raspberry Pi")
+print("—————————————-")
+print()
+
+
+
+
+Inside while loop:
+
+data = {
+         "Temperature" = T_thermistor,
+         }
+     db.child("test").child("1-set").set(data)
+  db.child("test").child("2-push").push(data)
+
+  time.sleep(2)
